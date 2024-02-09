@@ -130,7 +130,7 @@ Packages for other practices were built (after `catkin_make`), except for `pract
 13. Create folder `nodes` under the `~/autoware_mini_practice/src/practice_1` and move your previously created subscriber and publisher nodes there
 14. `cd ~/autoware_mini_practice`
 15. `catkin_make` - observe the output and see if package `practice_1` is found and successfully built along with others
-16. `source /devel/setup.bash` - source again your workspace since it is changed
+16. `source /devel/setup.bash` - source again your workspace since it has changed
 
 ##### Validation
 * build process (`catkin_make`) should be without errors
@@ -173,12 +173,12 @@ How to run nodes:
 ##### Validation
 * Run in terminal: `roslaunch practice_1 practice_1.launch`
 * "Hello world!" should be printed like after part 2.
-
+* Notice you did not need to launch roscore, it was launched automatically by `roslaunch` command.
 
 ## 5. Parameters in launch files and nodes
 
 ##### Parameters in launch file
-What if we would like to publish another message instead of "Hello World!". Instead of replacing it in the code, we should turn it into the node's parameter that is acquired when the node starts. We can add reading the parameter values to nodes from the ROS parameter server, but before, something has to add the value there. It can be done with launch file [param tag](https://wiki.ros.org/roslaunch/XML/param):
+What if we would like to publish another message instead of "Hello World!"? Instead of replacing it in the code, we should turn it into the node's parameter that is acquired when the node starts. It can be done with launch file [param tag](https://wiki.ros.org/roslaunch/XML/param):
 
 ```
 <launch>
@@ -191,7 +191,7 @@ What if we would like to publish another message instead of "Hello World!". Inst
 ```
 
 ##### Node parameters
-Now we need to add the line that gets the prameter value from the ROS parameter server in the node. Read more in [Using Parameters in rospy](https://wiki.ros.org/rospy_tutorials/Tutorials/Parameters)
+Now we need to add the line that gets the parameter value in the node. Read more in [Using Parameters in rospy](https://wiki.ros.org/rospy_tutorials/Tutorials/Parameters)
 
 ```
 message = rospy.get_param('~message', 'Hello World!')
