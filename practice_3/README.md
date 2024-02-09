@@ -2,7 +2,7 @@
 
 # Practice 3 - Controller
 
-In this practice, we will implement a simple path following an algorithm (controller) called Pure Pursuit. Path following is about staying on the path as accurately as possible while driving the car. The only way we can control the vehicle is through the steering angle and speed. Your task is to implement the Pure Pursuit algorithm that produces the steering angles to keep the car on the path. To simplify things, velocities will be taken from the recorded path.
+In this practice, we will implement a simple path following algorithm (controller) called Pure Pursuit. Path following is about staying on the path as accurately as possible while driving the car. The only way we can control the vehicle is through the steering angle and speed. Your task is to implement the Pure Pursuit algorithm that produces the steering angles to keep the car on the path. To simplify things, velocities will be taken from the recorded path.
 
 Output from your node (steering angle and speed) will go into the `bicycle_simulation` node (that is given). It will then, based on the vehicle's current position and commands from your controller node, calculate and update where the vehicle will be in the next time step and what is its speed and orientation.
 
@@ -28,12 +28,11 @@ More about Pure Pursuit:
 ## 1. Preparation
 
 1. Copy your localizer node from the previous practice to your new practice_3 package under the `/nodes/localizer`
-2. As areminder let us build the workspace. It is not necessary here, since we are adding a python node that does not need building. If we would be using code in C or C++ then after including the source code of the new node we would need to build the workspace and source it.
+2. As a reminder let us build the workspace. It is not necessary here, since we are adding a python node that does not need building. If we would be using code in C or C++ then after including the source code of the new node we would need to build the workspace and source it.
 3. Go to catkin_ws folder: `cd ~/autoware_mini_practice`
-4. Optional: `catkin clean` - will clean te workspace. Removes `build` and `devel` folders if you allow it. Suggested when nodes are removed or replaced, but again it is crucial when we are dealing with code that needs to be built. It is not the case with Python code, so we can see the code changes affecting the behaviour already without rebuilding the workspace.
-5. Optional: `catkin init` - if for some reason `catkin clean` reports an error and the workspace is not properly initialized
-6. Build workspace: `catkin_make`
-7. Source your workspace: `source devel/setup.bash`
+4. Optional: `catkin clean` - will clean te workspace. Removes `build` and `devel` folders. Suggested when nodes are removed or replaced, but again it is crucial when we are dealing with code that needs to be built. It is not the case with Python code, so we can see the code changes affecting the behaviour already without rebuilding the workspace.
+5. Build workspace: `catkin_make`
+6. Source your workspace: `source devel/setup.bash`
 
 ##### Validation
 * If you don't want to overwrite your waypoints file from the previous practice, then run `roslaunch practice_3 practice_2.launch` with the additional argument `waypoints_file:=your_custom_file_name.csv`
@@ -91,9 +90,9 @@ if __name__ == '__main__':
 
 3. Two subscribers are already created. Add some content there, so that it wouldn't give an error when you run it (`pass` or some kind of helpful printouts)
 4. Add the shebang line and give execution rights to your node
-5. Modify the `practice3.launch` file by adding the launching the node `pure_pursuit_follower`
+5. Modify the `practice_3.launch` file by adding the launching of the node `pure_pursuit_follower`
    - Inside the node tags, you will see [remap](https://wiki.ros.org/roslaunch/XML/remap) from topic `path` to `global_path`
-   - It is because `waypoint_loader` is publishing its path to the topic `global_path`, but our follower subscribes to the general `path`. That is why in this specific case we add topic remap, because in some other usecase the same follower node might need to subscribe to `local_path`. Then we would add remap to `local_path`. So the node itself is more general and can handle both that is why we are using the more general name inside the node and special cases are solved using remaps.
+   - It is because `waypoint_loader` is publishing its path to the topic `global_path`, but our follower subscribes to the general `path`. That is why in this specific case we add topic remap, because in some other use case the same follower node might need to subscribe to `local_path`. Then we would add remap to `local_path`. So the node itself is more general and can handle both that is why we are using the more general name inside the node and special cases are solved using remaps.
 
 ```
 <!-- Waypoint follower -->
@@ -164,7 +163,7 @@ from scipy.interpolate import interp1d
 
 ###### lateral control - steering angle
 
-We will get to the actual steering angle calculation further on, but let's do some preparations here. To get the speed and calculate steering angle, we need to know where we are on the path. We are going to use [shapley project](https://shapely.readthedocs.io/en/stable/reference/shapely.GeometryCollection.html#shapely.GeometryCollection.project) function for that. It will find the closest point to ego vehicle on the path and return the distance to that point from the path start.
+We will get to the actual steering angle calculation further on, but let's do some preparations here. To get the speed and calculate steering angle, we need to know where we are on the path. We are going to use [shapely project](https://shapely.readthedocs.io/en/stable/reference/shapely.GeometryCollection.html#shapely.GeometryCollection.project) function for that. It will find the closest point to ego vehicle on the path and return the distance to that point from the path start.
 
 1. First, we need a path in shapely Linestring format. Add the following code to the correct places:
 

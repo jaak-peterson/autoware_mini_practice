@@ -8,7 +8,7 @@ In this practice, we will use logged data from the car saved in the rosbag and p
 * location is given as latitude and longitude (geographic coordinates in WGS84 system, with [epsg code 4326](https://epsg.io/4326))
 * velocity has three components (east, north and up).
 
-The localizer node must take the latitude and longitude and convert them to UTM coordinates for zone 35N (the cartesian coordinate system with Universal Transverse Mercator projection and having the [epsg code of 25835](https://epsg.io/25835)) so that the car can be localized on the map.
+The localizer node must take the latitude and longitude and convert them to UTM coordinates for zone 35N (the cartesian coordinate system with Universal Transverse Mercator projection and having the [epsg code of 25835](https://epsg.io/25835)) so that the car can be positioned on the map.
 
 #### Additionally provided:
 
@@ -48,11 +48,13 @@ We will create a [subscriber node](https://wiki.ros.org/ROS/Tutorials/WritingPub
 ```
 #!/usr/bin/env python3
 
-import rospy
 import math
-from pyproj import CRS, Transformer, Proj
+import rospy
+
 from tf.transformations import quaternion_from_euler
 from tf2_ros import TransformBroadcaster
+from pyproj import CRS, Transformer, Proj
+
 from novatel_oem7_msgs.msg import INSPVA
 from geometry_msgs.msg import PoseStamped, TwistStamped, Quaternion, TransformStamped
 
@@ -92,7 +94,7 @@ if __name__ == '__main__':
 ##### Validation
 * As a reminder lets run first all the nodes manually
 * In terminal 1: `roscore`
-* In terminal 2: `rosbag play --clock ride_14_minimal.bag` - need to be in the same folder where the rosbag is or enter it with the relative path. Bag files are under `common` package `/data/bags`.
+* In terminal 2: `rosbag play --clock ride_14_minimal.bag` - need to be in the same folder where the rosbag is or enter it with the relative path. Bag files are under `common` package directory `data/bags`.
 * In terminal 3: run the localizer node (`python localizer.py`) and see if the coordinates printed out are roughly similar to the following:
 
 ```
@@ -251,6 +253,9 @@ Message type in `current_velocity` is [TwistStamped](https://docs.ros.org/en/mel
    * assign velocity to `msg.twist.linear.x`
 4. Publish to `current_velocity`
 
+##### Validation
+* run `roslaunch practice_2 practice_2.launch`
+* `rostopic echo /current_velocity`
 
 ## 5. Create and publish transform
 

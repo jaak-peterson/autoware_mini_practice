@@ -12,7 +12,7 @@ In this practice, you will progressively build a basic ROS (Robot Operating Syst
 
 #### Expected outcome
 * Understand the basics of ROS logic (publishers and subscribers)
-* You can write your own ROS nodes and know how to organize the code in simple and class based structure
+* You can write your own simple ROS nodes
 * Have an idea what is catkin workspace, ROS package and how to create them
 
 
@@ -21,7 +21,7 @@ In this practice, you will progressively build a basic ROS (Robot Operating Syst
 Write a simple publisher node that publishes "Hello World!" to a topic called `/message` with a message type of [std_msgs/String](https://docs.ros.org/en/noetic/api/std_msgs/html/msg/String.html). The Publisher should publish the string with a frequency (rate) of 2Hz.
 
 ##### Instructions
-1. Create an empty directory with custom name somewhere you can easily access it. We will be using it half- way through this practice and then transfer to another directory.
+1. Create an empty directory with custom name somewhere you can easily access it. We will be using it halfway through this practice and then transfer to another directory.
 1. Create a new file `publisher.py` into that folder. 
 2. Copy the following code into it:
 
@@ -77,6 +77,7 @@ rospy.spin()
 ```
 3. More explanations:
    - Create the [Subscriber](https://wiki.ros.org/rospy/Overview/Publishers%20and%20Subscribers#Subscribing_to_a_topic)
+   - `rospy.spin` - starts the thread that receives the messages and runs the callback
 
 
 ##### Validation
@@ -99,22 +100,22 @@ We needed three console windows to run the roscore and two nodes in part 2. What
 1. `mkdir -p ~/autoware_mini_practice/src` - create the folder for the workspace
    - workspace folder is `~/autoware_mini_practice`
    - all the code and packages will be under the `~/autoware_mini_practice/src/`
-2. `cd ~/autoware_mini_practice/src`
-3. `catkin_init_workspace` - should create a symlink to the CMakeLists.txt file in ROS folder
-4. `cd ~/autoware_mini_practice` - go to the catkin workspace folder
-5. And alredy we could build a workspace without actually having any contents there
-   - `catkin_make` - run the command
+2. `cd ~/autoware_mini_practice` - go to the catkin workspace folder
+3. And already we could build a workspace without actually having any contents there
+   - Optional : when first time creating the workspace folder we can run `catkin init` - will create hidden `.catkin_tools` folder and that defines also that this is the workspace folder
+   - `catkin build` - will initialize workspace and build the workspace and packages inside.
+      * If `catkini init` has not been used, then needs to be run in the catkin workspace folder. Will also create the `.catkin_tools` folder and initialize workspace.
+      * If `catkini init` was used then `catkin build` can be run anywhere inside catkin workspace.
    - `ll` - see that additional folders like `build` and `devel` are created
-6. Now we want to clone the repo into the `src` folder, but since we have a file there (a symlink created by catkin_init_workspace command) git won't allow cloning.
-   - go to the src folder and delete the symlink - It is not strictly necessary
+4. Now we want to clone the repo into the `src` folder
    - `git clone git@github.com:<your_github_username>/autoware_mini_practice.git src` - we need to clone the repo under src folder because that is how ROS expects
-7. `catkin_make` - run again and see that some packages (`common`, `practice_2`, `practice_3`, ...) are built, but `practice_1` is not one of them. We will create it right in the next part.
-8. `source devel/setup.bash` - source the workspace (sourcing is the way of letting the operating system know where the resources are located so it can access them)
+5. `catkin build` - run again and see that some packages (`common`, `practice_2`, `practice_3`, ...) are built, but `practice_1` is not one of them. We will create it right in the next part.
+6. `source devel/setup.bash` - source the workspace (sourcing is the way of letting the operating system know where the resources are located so it can access them)
 
 
 ##### About packages
 
-Packages for other practices were built (after `catkin_make`), except for `practice_1`. Some essential files are needed to define the package. These files could be created manually, but for practice_1 let us use the commands that are provided by catkin.
+Packages for other practices were built (after `catkin build`), except for `practice_1`. Some essential files are needed to define the package. These files could be created manually, but for practice_1 let us use the commands that are provided by catkin.
 
 * Packages also follow standard folder structure, for example:
    - nodes, launch files, config files etc., are organized in their own folders
@@ -123,17 +124,17 @@ Packages for other practices were built (after `catkin_make`), except for `pract
    - `CMakeLists.txt` - build instructions
 
 ##### Continue with ROS package creation
-9. `cd ~/autoware_mini_practice/src` - go to that folder (it should already contain folder `practice_1`)
-10. `catkin_create_pkg practice_1 rospy std_msgs` - [this command will](https://wiki.ros.org/ROS/Tutorials/CreatingPackage#ROS.2FTutorials.2Fcatkin.2FCreatingPackage.Creating_a_catkin_Package) create a package (namely the two essential files) and adds `rospy` and `std_msgs` as dependencies
-11. Open and see the contents of `package.xml` and `CMakeLists.txt` files, edit metadata in `package.xml`
-12. Optional: clean these files from unnecessary comments (all commented-out blocks)
-13. Create folder `nodes` under the `~/autoware_mini_practice/src/practice_1` and move your previously created subscriber and publisher nodes there
-14. `cd ~/autoware_mini_practice`
-15. `catkin_make` - observe the output and see if package `practice_1` is found and successfully built along with others
-16. `source /devel/setup.bash` - source again your workspace since it has changed
+7. `cd ~/autoware_mini_practice/src` - go to that folder (it should already contain folder `practice_1`)
+8. `catkin_create_pkg practice_1 rospy std_msgs` - [this command will](https://wiki.ros.org/ROS/Tutorials/CreatingPackage#ROS.2FTutorials.2Fcatkin.2FCreatingPackage.Creating_a_catkin_Package) create a package (namely the two essential files) and adds `rospy` and `std_msgs` as dependencies
+9. Open and see the contents of `package.xml` and `CMakeLists.txt` files, edit metadata in `package.xml`
+10. Optional: clean these files from unnecessary comments (all commented-out blocks)
+11. Create folder `nodes` under the `~/autoware_mini_practice/src/practice_1` and move your previously created subscriber and publisher nodes there
+12. Optional: `cd ~/autoware_mini_practice`
+13. `catkin build` - observe the output and see if package `practice_1` is found and successfully built along with others
+14. `source /devel/setup.bash` - source again your workspace since it is changed
 
 ##### Validation
-* build process (`catkin_make`) should be without errors
+* build process (`catkin build`) should be without errors
 * `rospack list` - should display your packages among a lot of others
 * Here it might be a good idea to commit your changes to github, so they won't be lost. Make regular meaningful commits with proper commit message.
 
@@ -155,7 +156,7 @@ How to run nodes:
 * Try `./publisher.py` and `./subscriber.py`
 * Additionally, you should be able to run your nodes now from any directory using the rosrun command and referring to a package (because the package is built and sourced and ROS knows where hey are located)
    - `rosrun practice_1 publisher.py`
-   - `rosrun practice_1 subscribr.py`
+   - `rosrun practice_1 subscriber.py`
 * Push your changes to github!
 
 
@@ -173,16 +174,16 @@ How to run nodes:
 ##### Validation
 * Run in terminal: `roslaunch practice_1 practice_1.launch`
 * "Hello world!" should be printed like after part 2.
-* Notice you did not need to launch roscore, it was launched automatically by `roslaunch` command.
+
 
 ## 5. Parameters in launch files and nodes
 
 ##### Parameters in launch file
-What if we would like to publish another message instead of "Hello World!"? Instead of replacing it in the code, we should turn it into the node's parameter that is acquired when the node starts. It can be done with launch file [param tag](https://wiki.ros.org/roslaunch/XML/param):
+What if we would like to publish another message instead of "Hello World!". Instead of replacing it in the code, we should turn it into the node's parameter that is acquired when the node starts. We can add reading the parameter values to nodes from the ROS parameter server, but before, something has to add the value there. It can be done with launch file [param tag](https://wiki.ros.org/roslaunch/XML/param):
 
 ```
 <launch>
-    <node pkg="practice_1" name="publisher" type="publisher.py" output="screen" required="true"/>
+    <node pkg="practice_1" name="publisher" type="publisher.py" output="screen" required="true" >
          <param name="message"   value="Hello ROS!" />
     </node>
 
@@ -191,7 +192,7 @@ What if we would like to publish another message instead of "Hello World!"? Inst
 ```
 
 ##### Node parameters
-Now we need to add the line that gets the parameter value in the node. Read more in [Using Parameters in rospy](https://wiki.ros.org/rospy_tutorials/Tutorials/Parameters)
+Now we need to add the code line (provided below) into the node that will get the prameter value from the ROS parameter server. Read more in [Using Parameters in rospy](https://wiki.ros.org/rospy_tutorials/Tutorials/Parameters)
 
 ```
 message = rospy.get_param('~message', 'Hello World!')
@@ -199,7 +200,8 @@ message = rospy.get_param('~message', 'Hello World!')
 
 ##### Instructions
 1. Copy and replace the launch file code
-2. add the get_param to the publisher code
+2. Add the get_param line to the publisher code
+3. Replace previously hardcoded message with new variable `message`
 
 ##### Validation
 * `roslaunch practice_1 practice_1.launch`
@@ -214,8 +216,8 @@ ROS nodes can be reused - for example, we can run several instances of the publi
    - add it to the launch file
    - add it to the publisher node
 2. In the launch file, duplicate the Publisher and change:
-   - `name` - for example `publisher_1` and `publihser_2`. You can't have 2 nodes with the same name running.
-   - change frequencies (for example, 2Hz and 10Hz) and names to be different
+   - `name` - for example `publisher_1` and `publisher_2`. You can't have 2 nodes with the same name running.
+   - change frequencies (for example, 2Hz and 10Hz) and messages to be different
 
 ##### Validation
 * `roslaunch practice_1 practice_1.launch`
