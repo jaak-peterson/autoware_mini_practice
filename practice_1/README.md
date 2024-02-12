@@ -95,6 +95,8 @@ rospy.spin()
 
 We needed three console windows to run the roscore and two nodes in part 2. What if our system grows bigger - it would be a nightmare to launch the nodes separately! We could run all of them with one command if we added nodes into a launch file. To do that, we first need to organize our files into the catkin workspace ([catkin](https://wiki.ros.org/catkin/conceptual_overview) is the ROS build system for workspaces and packages). Inside the Catkin workspace, we will create smaller ROS packages. In our case, all the practices will be separate packages. All packages belonging to the same catkin workspace will be built together.
 
+For building and creating workspace and packages we will be using [catkin_tools](https://catkin-tools.readthedocs.io/en/latest/index.html)
+
 ##### Workspace creation
  
 1. `mkdir -p ~/autoware_mini_practice/src` - create the folder for the workspace
@@ -102,10 +104,7 @@ We needed three console windows to run the roscore and two nodes in part 2. What
    - all the code and packages will be under the `~/autoware_mini_practice/src/`
 2. `cd ~/autoware_mini_practice` - go to the catkin workspace folder
 3. And already we could build a workspace without actually having any contents there
-   - Optional : when first time creating the workspace folder we can run `catkin init` - will create hidden `.catkin_tools` folder and that defines also that this is the workspace folder
    - `catkin build` - will initialize workspace and build the workspace and packages inside.
-      * If `catkini init` has not been used, then needs to be run in the catkin workspace folder. Will also create the `.catkin_tools` folder and initialize workspace.
-      * If `catkini init` was used then `catkin build` can be run anywhere inside catkin workspace.
    - `ll` - see that additional folders like `build` and `devel` are created
 4. Now we want to clone the repo into the `src` folder
    - `git clone git@github.com:<your_github_username>/autoware_mini_practice.git src` - we need to clone the repo under src folder because that is how ROS expects
@@ -125,7 +124,7 @@ Packages for other practices were built (after `catkin build`), except for `prac
 
 ##### Continue with ROS package creation
 7. `cd ~/autoware_mini_practice/src` - go to that folder (it should already contain folder `practice_1`)
-8. `catkin_create_pkg practice_1 rospy std_msgs` - [this command will](https://wiki.ros.org/ROS/Tutorials/CreatingPackage#ROS.2FTutorials.2Fcatkin.2FCreatingPackage.Creating_a_catkin_Package) create a package (namely the two essential files) and adds `rospy` and `std_msgs` as dependencies
+8. `catkin create pkg practice_1 --system-deps rospy std_msgs` - will create a package (namely the two essential files) and adds `rospy` and `std_msgs` as dependencies
 9. Open and see the contents of `package.xml` and `CMakeLists.txt` files, edit metadata in `package.xml`
 10. Optional: clean these files from unnecessary comments (all commented-out blocks)
 11. Create folder `nodes` under the `~/autoware_mini_practice/src/practice_1` and move your previously created subscriber and publisher nodes there
@@ -135,7 +134,8 @@ Packages for other practices were built (after `catkin build`), except for `prac
 
 ##### Validation
 * build process (`catkin build`) should be without errors
-* `rospack list` - should display your packages among a lot of others
+* `catkin list` - should list your packages, including `practice_1`
+   - `rospack list` - should display your packages among a lot of others - displays all known packages (sourced) available to ROS
 * Here it might be a good idea to commit your changes to github, so they won't be lost. Make regular meaningful commits with proper commit message.
 
 

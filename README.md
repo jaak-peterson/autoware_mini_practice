@@ -2,6 +2,8 @@
 
 This repo serves as an introduction to Autoware Mini. There are 8 practices that introduce the principles of main modules of Autoware Mini.
 
+![system diagram](/doc/diagram.png)
+
 ## Practices
 
 | Practice | Topic                   |
@@ -25,19 +27,17 @@ This repo serves as an introduction to Autoware Mini. There are 8 practices that
 **Good luck and enjoy!**
 
 
-## Using GIT and code review
+## Using Git
 
-#### Github account
+#### GitHub account
 
 * You should have your own [GitHub account](https://github.com/)
+* You should set up the private key to make working with GitHub easier
+   * [Generate private key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+   * [Copy public key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 * When cloning the repo it is advised to use SSH link
 
 ![clone_ssh](/doc/cloning_ssh.png)
-
-* You should set up the private key to make working with github easier
-   * [Generate private key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
-   * [Copy public key to your github account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
-
 
 #### Git commands
 
