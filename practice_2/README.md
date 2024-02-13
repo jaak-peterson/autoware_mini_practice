@@ -2,21 +2,26 @@
 
 # Practice 2 - Localizer
 
-Localizer determines vehicle position and speed. The position is the result of measurements done by the [GNSS - Global Navigation Satellite System]((https://en.wikipedia.org/wiki/Satellite_navigation)). Speed can be determined from consecutive locations (shift in location and difference in the time). More sophisticated systems (like Novatel SPAN system, for example [Novatel PwrPak7D](https://novatel.com/products/receivers/enclosures/pwrpak7d)) include also IMU measurements to improve the accuracy of GNSS positioning.
+The primary task of the localizer is to determine the vehicle's position on the map. The position is the result of measurements done by the [GNSS - Global Navigation Satellite System]((https://en.wikipedia.org/wiki/Satellite_navigation)). Speed can be determined from consecutive locations (shift in location and difference in the time). More sophisticated systems (like Novatel SPAN system, for example [Novatel PwrPak7D](https://novatel.com/products/receivers/enclosures/pwrpak7d)) include also IMU (Inertial Measurement Unit) measurements to improve the accuracy of GNSS positioning.
 
-In this practice, we will use logged data from the car saved in the rosbag and provided in the `common` package. The GNSS log is recorded in the `/novatel/oem7/inspva` topic:
-* location is given as latitude and longitude (geographic coordinates in WGS84 system, with [epsg code 4326](https://epsg.io/4326))
+In this practice, we will use logged data from the car saved in the rosbag file and provided in the `common` package. The GNSS log is recorded in the `/novatel/oem7/inspva` topic:
+* location is given as latitude and longitude (geographic coordinates in WGS84 system, with [EPSG code 4326](https://epsg.io/4326))
 * velocity has three components (east, north and up).
 
-The localizer node must take the latitude and longitude and convert them to UTM coordinates for zone 35N (the cartesian coordinate system with Universal Transverse Mercator projection and having the [epsg code of 25835](https://epsg.io/25835)) so that the car can be positioned on the map.
+The localizer node must take the latitude and longitude and convert them to map coordinates, which are in UTM zone 35N (the cartesian coordinate system with Universal Transverse Mercator projection and having the [EPSG code of 25835](https://epsg.io/25835)) so that the car can be positioned on the map.
+
+EPSG abbreviation originated from the European Petroleum Survey Group in 1985 but has transformed into a public registry of geodetic datums and spatial reference systems.
+
+GNSS is an absolute positioning method - we get the vehicle coordinates straight from the GNSS measurements. In our case, it is not in the correct coordinate system, and our localizer does the coordinate transformation. Localizer could also use lidar(s) or camera(s) for localization - then we would have a localizer node that would do a lot of different tasks. In the case of lidar, it is very common to have a lidar point cloud map ready, and lidar measurements will be relative to this point cloud map. The localizer would then find a location for the lidar so that the existing point cloud map and the lidar measurements (lidar scan) match. This is also referred to as relative localization.
+
 
 #### Additionally provided:
 
 ##### in `practice_2`
 * `/nodes/planning/waypoint_saver.py` - node for waypoint saving
 * `/launch/practice_2.launch` - a launch file that should run without errors at the end of the practice using your localizer node and also launch waypoint recording
-* `/rviz/practice_2.rviz` - rviz config file for visualizing the topics
-* `/config/localization.yaml` - some parameter values for localizer
+* `/rviz/practice_2.rviz` - rviz config file for visualizing the topics. Rviz is a 3D visualization tool for ROS.
+* `/config/localization.yaml` - some parameter values for localizer. Instead of using launch file to set parameter values a file can be loaded where the parameters are listed.
 
 ##### in `common`
 * `/common/data/bags/ride_14_minimal.bag` - filtered rosbag that contains GNSS log with latitude and longitude data
@@ -91,10 +96,37 @@ if __name__ == '__main__':
     node.run()
 ```
 
+##### Getting the parameter values
+
+A very brief look into getting the parameter values in ROS. We are not explicitly addressing this feature in ROS, but we need to draw your attention here so you can pay attention and notice it in further practices. Let's start with an example of how to get the parameter value using `rospy.get_param` and the `undulation` parameter.
+```
+self.undulation = rospy.get_param('undulation')
+self.undulation = rospy.get_param('~undulation')
+self.undulation = rospy.get_param('/undulation')
+```
+
+The parameter name is `undulation`, and there are three options to get it using different prefixes:
+1. Nothing in front defines **relative** naming. Optionally, there can be additional namespace (see below small explanation about namespace) names in front of it, like `namespace/undulation`. If the node is launched in some other namespace, its name is added in front.
+2. `~` in front is a way to say that the parameter is **private**. Currently, you launch the node `localizer.py` that will have the name `localizer`, so the parameter will also get this name in front and the parameter searched from the ROS parameter server would be `localizer/undulation`
+3. `/` - makes the parameter name **absolute**. It means that it doesn't matter in which namespace you launch the node or what the node name is; it will stay `/undulation`, and that will be looked for in the ROS parameter server.
+
+Namespace is a way of grouping nodes, topics and parameters into logical groups. It will not be covered very thoroughly here. You can imagine the same `localizer` node being used at the same time with two different robots. With the first robot, we can use the namespace `robot_1`, and with the second, we can use `robot_2`. In the localizer node we might read in the parameters as follows:
+
+```
+utm_origin = rospy.get_param('/utm_origin')
+antenna_height = rospy.get_param('antenna_height')
+```
+The result will be that:
+* `/utm_origin` will stay the same because of its absolute name. And it is logical since the origin is the same value for both robots.
+* `antenna_height` will become `robot_1/antenna_height` and `robot_2/antenna_height`, and they can now have different values, and at the same time, exactly the same node was run.
+
+More on [resolving the parameter names](https://wiki.ros.org/Names#Resolving).
+
+
 ##### Validation
 * As a reminder lets run first all the nodes manually
 * In terminal 1: `roscore`
-* In terminal 2: `rosbag play --clock ride_14_minimal.bag` - need to be in the same folder where the rosbag is or enter it with the relative path. Bag files are under `common` package directory `data/bags`.
+* In terminal 2: `rosbag play ride_14_minimal.bag` - need to be in the same folder where the rosbag is or enter it with the relative path. Bag files are under `common` package directory `data/bags`.
 * In terminal 3: run the localizer node (`python localizer.py`) and see if the coordinates printed out are roughly similar to the following:
 
 ```
@@ -111,7 +143,7 @@ latitude:  58.377320343735214  longitude:  26.730933999096404
 
 ## 2. Convert coordinates
 
-Latitude and longitude are geographic coordinates with the coordinate system name "wgs84". and we saw them being printed out in the previous task.
+Latitude and longitude are geographic coordinates with the coordinate system name "WGS84". and we saw them being printed out in the previous task.
 
 Our localizer needs to transform these coordinates to UTM zone 35N ([epsg code: 25835](https://epsg.io/25835)), because the map we are using has these coordinates. Additionally, we have defined a custom origin point near the Delta building that needs to be subtracted from transformed coordinates.
 
@@ -148,7 +180,7 @@ As a next step, we must publish transformed coordinates to a `current_pose` topi
    * [Header message](https://docs.ros.org/en/noetic/api/std_msgs/html/msg/Header.html) that has
       * seq - sequence id, int number that is increasing with every sent message
       * stamp - contains the timestamp of the message of type **time**
-      * frame_id - reference frame name. Since we will be sending coordinates in a map frame, we need to add a `map` there
+      * frame_id - reference frame name. Since we will be sending coordinates in a map frame, we need to add a `"map"` there. Reference frames will be explained more in future practices.
    * [Pose message](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Pose.html) consists of two parts, each referring yet to another message type:
       * `position` (message type [geometry_msgs/Point](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Point.html))
       * `orientation` (message type [geometry_msgs/Quaternion](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Quaternion.html))
@@ -158,21 +190,21 @@ Let's look separately how we can get the `position` and `orientation`.
 ##### `position`
 * `position` is a [Point](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Point.html) message
    - `position.x` and `position.y` are the transformed coordinates with subtracted origin coordinates
-   - for `position.z` we need to take `msg.height` and subtract undulation (parameter)
+   - for `position.z` we need to take `msg.height` and subtract `undulation` (parameter)
 
 ##### `orientation`
 * `orientation` is [Quaternion](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Quaternion.html) message and [quaternion](https://en.wikipedia.org/wiki/Quaternion) is a way to represent angles with respect to coordinate axis aka orientation.
 * From INSPVA we have azimuth - angle from North in clockwise direction
 * We will be ignoring the car's roll and pitch angles currently
 * Essentially, we need to convert the azimuth angle to Quaternion, and then we can assign it as `orientation` in the PoseStamped message. There are a couple of things we need to do to achive that:
-   - INSPVA azimuth is in the wgs84 system (ellipsoidal system and the North direction is always along the meridian pointing to the North); we need to correct it for the UTM zone 35N coordinate system (cartesian coordinates on the planar surface where the North direction is taken from the central meridian).
+   - INSPVA azimuth is in the WGS84 system (ellipsoidal system and the North direction is always along the meridian pointing to the North); we need to correct it for the UTM zone 35N coordinate system (cartesian coordinates on the planar surface where the North direction is taken from the central meridian).
    - The correction depends on location and is also known as meridian convergence. This can be found using the following code line with [get_factors](https://pyproj4.github.io/pyproj/stable/api/proj.html#pyproj.Proj.get_factors) method (see the example code line below)
    - Next thing is we need to convert angle from azimuth (**clockwise (CW)** angle from North - **y axis**) to **counterclocḱwise (CCW)** angle from **x-axis** (this is how angles are usually represented in ROS). Let's call this angle **yaw**. For that, the function convert_azimuth_to_yaw() is provided in the code section
    - And finally, we can convert the angle to Quaternion; you can use the `quaternion_from_euler` for that
 
 ```
 # calculate azimuth correction
-azimuth_correction = (self.utm_projection.get_factors(msg.longitude, msg.latitude).meridian_convergence)
+azimuth_correction = self.utm_projection.get_factors(msg.longitude, msg.latitude).meridian_convergence
 
 # convert azimuth to yaw angle
 def convert_azimuth_to_yaw(azimuth):
@@ -217,7 +249,7 @@ self.current_pose_pub.publish(current_pose_msg)
 
 ##### Validation
 * run `roslaunch practice_2 practice_2.launch`
-* `rostopic echo /current_pose` should see messages published similar to this:
+* `rostopic echo /localization/current_pose` should see messages published similar to this:
 
 ```
 header: 
@@ -240,7 +272,7 @@ pose:
 
 ## 4. Publish `current_velocity`
 
-Velocity is represented in `/novatel/oem7/inspva` messages with three components: north_velocity, east_velocity and up_velocity. We will use only the North and east components and take their norm.
+Velocity is represented in `/novatel/oem7/inspva` messages with three components: `north_velocity`, `east_velocity` and `up_velocity`. We will use only the North and East components and take their norm.
 
 Message type in `current_velocity` is [TwistStamped](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/TwistStamped.html), and we are going to write the calculated velocity to `message.twist.linear.x` and say that `message.header.frame_id` equals to `base_link`. `base_link` is a common way to name the robots/cars main reference frame where the x axis points forward. That is why we are calculating the norm and writing it only to `twist.linear.x`.
 
@@ -255,7 +287,28 @@ Message type in `current_velocity` is [TwistStamped](https://docs.ros.org/en/mel
 
 ##### Validation
 * run `roslaunch practice_2 practice_2.launch`
-* `rostopic echo /current_velocity`
+* `rostopic echo /localization/current_velocity`, similar messages should appear
+
+
+```
+header: 
+  seq: 567
+  stamp: 
+    secs: 1698739091
+    nsecs: 147263737
+  frame_id: "base_link"
+twist: 
+  linear: 
+    x: 3.9187759208925708
+    y: 0.0
+    z: 0.0
+  angular: 
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+```
+
 
 ## 5. Create and publish transform
 
@@ -266,7 +319,7 @@ Message type in `current_velocity` is [TwistStamped](https://docs.ros.org/en/mel
    - `frame_id` is `map`
    - `child_frame_id` should be `base_link`
    - timestamp should come from the INSPVA message
-2. Transform consists of translation and rotation that are basically current_pose and orientation
+2. Transform consists of translation and rotation that are basically current_pose's position and orientation
 3. Use `sendTransform()` to publish the transform (TransformStamped message)
 
 

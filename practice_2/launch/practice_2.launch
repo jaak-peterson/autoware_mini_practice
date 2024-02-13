@@ -7,7 +7,7 @@
 
     <!-- Nodes -->
     <!-- Play rosbag -->
-    <node pkg="rosbag" type="play" name="player" required="true" args="$(find common)/data/bags/$(arg bag_file) --clock" />
+    <node pkg="rosbag" type="play" name="player" required="true" args="$(find common)/data/bags/$(arg bag_file)" />
 
     <!-- Localizer -->
     <node pkg="practice_2" type="localizer.py" name="localizer" output="screen" required="true" ns="localization" />
