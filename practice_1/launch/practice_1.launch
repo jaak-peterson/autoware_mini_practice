@@ -1,0 +1,13 @@
+<launch>
+    <node pkg="practice_1" name="publisher_1" type="publisher.py" output="screen" required="true" >
+         <param name="message"   value="Hello ROS!" />
+         <param name="rate"   value="4" />
+    </node>
+    <node pkg="practice_1" name="publisher_2" type="publisher.py" output="screen" required="true" >
+         <param name="message"   value="Hello ROS2!" />
+         <param name="rate"   value="1" />
+    </node>
+
+
+    <node pkg="practice_1" name="subscriber" type="subscriber.py" output="screen" required="true"/>
+</launch>
