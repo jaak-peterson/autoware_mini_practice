@@ -52,7 +52,6 @@ class Localizer:
 
     def transform_coordinates(self, msg):
         msg_x, msg_y = self.transformer.transform(msg.latitude, msg.longitude)
-        print(msg) 
         msg_x = msg_x - self.origin_x
         msg_y = msg_y - self.origin_y
         msg_z = msg.height - self.undulation
@@ -60,7 +59,7 @@ class Localizer:
         azimuth_correction = self.utm_projection.get_factors(msg.longitude, msg.latitude).meridian_convergence
         azimuth = msg.azimuth + azimuth_correction
         azimuth_radians = math.radians(azimuth)
-        yaw = self.convert_azimuth_to_yaw(azimuth)
+        yaw = self.convert_azimuth_to_yaw(azimuth_radians)
         x, y, z, w = quaternion_from_euler(0, 0, yaw)
         orientation = Quaternion(x, y, z, w)
         
@@ -81,6 +80,14 @@ class Localizer:
         current_velocity_msg.header.stamp = msg.header.stamp
         current_velocity_msg.twist.linear.x = norm
         self.current_velocity_pub.publish(current_velocity_msg)
+
+        t = TransformStamped()
+        t.header.stamp = msg.header.stamp
+        t.header.frame_id = "map"
+        t.child_frame_id = "base_link"
+        t.transform.translation = current_pose_msg.pose.position
+        t.transform.rotation = orientation
+        self.br.sendTransform(t)
 
 
     def run(self):
