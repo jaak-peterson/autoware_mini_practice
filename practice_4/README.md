@@ -267,4 +267,4 @@ Three ideas that might help:
 * Test your solution and verify that it works!
 * Clean the code, add comments, think about the readability of the code and pay attention to formatting
 * Commit your code!
-* When finished, please email your solution to the last task. Then, we know that your code is ready for review.
+* When finished, please email small description of your solution to the last task. Then, we know that your code is ready for review.
