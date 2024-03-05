@@ -57,7 +57,7 @@ class Localizer:
         msg_z = msg.height - self.undulation
         
         azimuth_correction = self.utm_projection.get_factors(msg.longitude, msg.latitude).meridian_convergence
-        azimuth = msg.azimuth + azimuth_correction
+        azimuth = msg.azimuth - azimuth_correction
         azimuth_radians = math.radians(azimuth)
         yaw = self.convert_azimuth_to_yaw(azimuth_radians)
         x, y, z, w = quaternion_from_euler(0, 0, yaw)
@@ -74,11 +74,11 @@ class Localizer:
         self.current_pose_pub.publish(current_pose_msg)
        
         
-        norm = math.sqrt(msg.north_velocity**2 + msg.east_velocity**2)
+        velocity_norm = math.sqrt(msg.north_velocity**2 + msg.east_velocity**2)
         current_velocity_msg = TwistStamped()
         current_velocity_msg.header.frame_id = "base_link"
         current_velocity_msg.header.stamp = msg.header.stamp
-        current_velocity_msg.twist.linear.x = norm
+        current_velocity_msg.twist.linear.x = velocity_norm
         self.current_velocity_pub.publish(current_velocity_msg)
 
         t = TransformStamped()
