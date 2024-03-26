@@ -33,27 +33,32 @@ class ClusterDetector:
     def cluster_callback(self, msg):
         data = numpify(msg)
         points = structured_to_unstructured(data[['x', 'y', 'z', 'label']], dtype=np.float32)
-        labels = points[:,3].astype(np.int32)
-        # fetch transform for target frame
-        try:
-            transform = self.tf_buffer.lookup_transform(self.output_frame, msg.header.frame_id, msg.header.stamp, rospy.Duration(self.transform_timeout))
-        except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
-            rospy.logwarn("%s - %s", rospy.get_name(), e)
-            return
+        labels = data['label']
+        is_existing_frame = msg.header.frame_id == self.output_frame
 
-        tf_matrix = numpify(transform.transform).astype(np.float32)
-        # make copy of points
+        # fetch transform for target frame
+        
+        if not is_existing_frame:
+            try:
+                transform = self.tf_buffer.lookup_transform(self.output_frame, msg.header.frame_id, msg.header.stamp, rospy.Duration(self.transform_timeout))
+            except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
+                rospy.logwarn("%s - %s", rospy.get_name(), e)
+                return
+
         points = points.copy()
         # turn into homogeneous coordinates
         points[:,3] = 1
         # transform points to target frame
-        points = points.dot(tf_matrix.T)
+        
+        if not is_existing_frame:
+            tf_matrix = numpify(transform.transform).astype(np.float32)
+            points = points.dot(tf_matrix.T)
 
         header = Header()
         header.stamp = msg.header.stamp
         header.frame_id = self.output_frame
         
-        if points.size == 0:
+        if len(labels) == 0:
             objects_msg = DetectedObjectArray()
             objects_msg.header = header
             self.objects_pub.publish(objects_msg)
@@ -70,15 +75,15 @@ class ClusterDetector:
             object = DetectedObject()
 
             #calculate centroid
-            centroid = np.mean(points3d, axis=0)
-            object.pose.position.x = centroid[0]
-            object.pose.position.y = centroid[1]
-            object.pose.position.z = centroid[2]
+            centroid_x, centroid_y, centroid_z = np.mean(points3d, axis=0)
+            object.pose.position.x = centroid_x
+            object.pose.position.y = centroid_y
+            object.pose.position.z = centroid_z
 
             # create convex hull
             points_2d = MultiPoint(points[mask,:2])
             hull = points_2d.convex_hull
-            convex_hull_points = [Point32(x, y, centroid[2]) for x, y in hull.exterior.coords]
+            convex_hull_points = [Point32(x, y, centroid_z) for x, y in hull.exterior.coords]
             object.convex_hull.polygon.points = convex_hull_points
 
             object.id = i
@@ -89,6 +94,7 @@ class ClusterDetector:
             object.pose_reliable = True
             object.velocity_reliable = False
             object.acceleration_reliable = False
+            object.header = header
             detected_objects.append(object)
         
         objects_msg = DetectedObjectArray()
