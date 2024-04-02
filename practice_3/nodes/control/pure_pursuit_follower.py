@@ -44,38 +44,39 @@ class PurePursuitFollower:
         distances = np.cumsum(np.sqrt(np.sum(np.diff(waypoints_xy, axis=0)**2, axis=1)))
         distances = np.insert(distances, 0, 0)
         velocities = np.array([w.twist.twist.linear.x for w in msg.waypoints])
+
+        distance_to_velocity_interpolator_local = interp1d(distances, velocities, kind='linear', bounds_error=True, fill_value=0.0)
         with self.lock:
             self.path_linestring = path_linestring
-            self.distance_to_velocity_interpolator = interp1d(distances, velocities, kind='linear', bounds_error=True, fill_value=0.0)
+            self.distance_to_velocity_interpolator = distance_to_velocity_interpolator_local
 
     def current_pose_callback(self, msg):
-        if self.path_linestring is None or self.distance_to_velocity_interpolator is None:
-            return
-        
         with self.lock:
             path_linestring_local = self.path_linestring
             distance_to_velocity_interpolator_local = self.distance_to_velocity_interpolator
-        
-        current_pose = Point([msg.pose.position.x, msg.pose.position.y])
-        d_ego_from_path_start = path_linestring_local.project(current_pose)
 
-        lookahead_point = path_linestring_local.interpolate(self.lookahead_distance + d_ego_from_path_start)
-        ld = distance(current_pose, lookahead_point)
-        _, _, heading = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        if path_linestring_local is not None and distance_to_velocity_interpolator_local is not None:
+            current_pose = Point([msg.pose.position.x, msg.pose.position.y])
+            d_ego_from_path_start = path_linestring_local.project(current_pose)
 
-        # lookahead point heading calculation
-        lookahead_heading = np.arctan2(lookahead_point.y - current_pose.y, lookahead_point.x - current_pose.x)
-        heading_diff = lookahead_heading - heading
-        steering_angle = np.arctan((2*self.wheel_base * np.sin(heading_diff))/ld)
-        
-        velocity = distance_to_velocity_interpolator_local(d_ego_from_path_start)
+            lookahead_point = path_linestring_local.interpolate(self.lookahead_distance + d_ego_from_path_start)
+            ld = distance(current_pose, lookahead_point)
+            _, _, heading = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
-        vehicle_cmd = VehicleCmd()
-        vehicle_cmd.header.stamp = msg.header.stamp
-        vehicle_cmd.header.frame_id = "base_link"
-        vehicle_cmd.ctrl_cmd.steering_angle = steering_angle
-        vehicle_cmd.ctrl_cmd.linear_velocity = velocity
-        self.vehicle_cmd_pub.publish(vehicle_cmd)
+            # lookahead point heading calculation
+            lookahead_heading = np.arctan2(lookahead_point.y - current_pose.y, lookahead_point.x - current_pose.x)
+            heading_diff = lookahead_heading - heading
+            steering_angle = np.arctan((2*self.wheel_base * np.sin(heading_diff))/ld)
+            
+            velocity = distance_to_velocity_interpolator_local(d_ego_from_path_start)
+
+            vehicle_cmd = VehicleCmd()
+            vehicle_cmd.header.stamp = msg.header.stamp
+            vehicle_cmd.header.frame_id = "base_link"
+            vehicle_cmd.ctrl_cmd.steering_angle = steering_angle
+            vehicle_cmd.ctrl_cmd.linear_velocity = velocity
+            self.vehicle_cmd_pub.publish(vehicle_cmd)
+        return
         
 
     def run(self):
