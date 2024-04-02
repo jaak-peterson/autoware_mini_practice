@@ -49,14 +49,13 @@ class ClusterDetector:
         header = Header()
         header.stamp = msg.header.stamp
         header.frame_id = self.output_frame
-        
+        objects_msg = DetectedObjectArray()
+        objects_msg.header = header
+
         if len(labels) == 0:
-            objects_msg = DetectedObjectArray()
-            objects_msg.header = header
             self.objects_pub.publish(objects_msg)
             return
 
-        detected_objects = []
         for i in np.unique(labels): 
             # create mask
             mask = (labels == i)
@@ -87,11 +86,8 @@ class ClusterDetector:
             object.velocity_reliable = False
             object.acceleration_reliable = False
             object.header = header
-            detected_objects.append(object)
+            objects_msg.objects.append(object)
         
-        objects_msg = DetectedObjectArray()
-        objects_msg.header = header
-        objects_msg.objects = detected_objects
         self.objects_pub.publish(objects_msg)
 
     def run(self):
