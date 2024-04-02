@@ -89,62 +89,44 @@ class Lanelet2GlobalPlanner:
 
     def lanelet_to_waypoints(self, path):
         waypoints = []
+        waypoints_array = []
 
-        isLast = False
         for index, lanelet in enumerate(path):
-            if index == len(path) - 1:
-                isLast = True
-            if 'speed_ref' in lanelet.attributes:
-                speed = float(lanelet.attributes['speed_ref'])
-            else:
-                speed = self.speed_limit
-            
+            speed = float(lanelet.attributes['speed_ref']) if 'speed_ref' in lanelet.attributes else self.speed_limit
             speed = min(speed, self.speed_limit) / 3.6
             
-            for i in range(len(lanelet.centerline)):
+            for i, point in enumerate(lanelet.centerline):
                 point = lanelet.centerline[i]
-                if i != len(lanelet.centerline) - 1 or isLast:
+                if i != len(lanelet.centerline) - 1 or index == len(path) - 1:
                     waypoint = Waypoint()
                     waypoint.pose.pose.position.x = point.x
                     waypoint.pose.pose.position.y = point.y
                     waypoint.pose.pose.position.z = point.z
                     waypoint.twist.twist.linear.x = speed
                     waypoints.append(waypoint)
+                    waypoints_array.append([point.x, point.y, point.z])
         
         goal_point = Point([self.goal_point.x, self.goal_point.y])
-        waypoints_array = np.array([(wp.pose.pose.position.x, wp.pose.pose.position.y, wp.pose.pose.position.z) for wp in waypoints])
+        waypoints_array = np.array(waypoints_array)
         waypoints_linestring = LineString(waypoints_array[:, :2])
 
         distance_to_goal = waypoints_linestring.project(goal_point)
         goal_point_in_waypoints = waypoints_linestring.interpolate(distance_to_goal)
-
-        min_distance = float('inf')
-        min_distance_index = 0
-        for i, wp in enumerate(waypoints_array):
-            distance = np.sqrt((goal_point_in_waypoints.x - wp[0])**2 + (goal_point_in_waypoints.y - wp[1])**2)
-            if distance < min_distance:
-                min_distance = distance
-                min_distance_index = i
+        min_distance_index, _ = min(enumerate(waypoints_array),key=lambda p: np.sqrt((goal_point_in_waypoints.x - p[1][0])**2 +(goal_point_in_waypoints.y - p[1][1])**2))
 
         closest_waypoint = waypoints_array[min_distance_index]
+        used_waypoints = waypoints[:min_distance_index]
 
         goal_waypoint = Waypoint()
         goal_waypoint.pose.pose.position.x = goal_point_in_waypoints.x
         goal_waypoint.pose.pose.position.y = goal_point_in_waypoints.y
         goal_waypoint.pose.pose.position.z = closest_waypoint[2]
+        goal_waypoint.twist.twist.linear.x = waypoints[min_distance_index].twist.twist.linear.x
 
+        used_waypoints.append(goal_waypoint)
         self.goal_point = BasicPoint2d(goal_waypoint.pose.pose.position.x, goal_waypoint.pose.pose.position.y)
         
-        filtered_waypoints = []
-        for wp in waypoints:
-            wp_point = Point([wp.pose.pose.position.x, wp.pose.pose.position.y])
-            distance = waypoints_linestring.project(wp_point)
-            if distance < distance_to_goal:
-                filtered_waypoints.append(wp)    
-
-        filtered_waypoints.append(goal_waypoint)
-        
-        return filtered_waypoints
+        return used_waypoints
 
     def publish_waypoints(self, waypoints):
         lane = Lane()        
