@@ -34,25 +34,17 @@ class ClusterDetector:
         data = numpify(msg)
         points = structured_to_unstructured(data[['x', 'y', 'z', 'label']], dtype=np.float32)
         labels = data['label']
-        is_existing_frame = msg.header.frame_id == self.output_frame
-
-        # fetch transform for target frame
         
-        if not is_existing_frame:
-            try:
+        try:
+            points = points.copy()
+            points[:,3] = 1
+            if msg.header.frame_id != self.output_frame:
                 transform = self.tf_buffer.lookup_transform(self.output_frame, msg.header.frame_id, msg.header.stamp, rospy.Duration(self.transform_timeout))
-            except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
+                tf_matrix = numpify(transform.transform).astype(np.float32)
+                points = points.dot(tf_matrix.T)
+        except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
                 rospy.logwarn("%s - %s", rospy.get_name(), e)
                 return
-
-        points = points.copy()
-        # turn into homogeneous coordinates
-        points[:,3] = 1
-        # transform points to target frame
-        
-        if not is_existing_frame:
-            tf_matrix = numpify(transform.transform).astype(np.float32)
-            points = points.dot(tf_matrix.T)
 
         header = Header()
         header.stamp = msg.header.stamp
