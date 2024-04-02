@@ -47,12 +47,18 @@ class PurePursuitFollower:
         distances = np.cumsum(np.sqrt(np.sum(np.diff(waypoints_xy, axis=0)**2, axis=1)))
         distances = np.insert(distances, 0, 0)
         velocities = np.array([w.twist.twist.linear.x for w in msg.waypoints])
+
+        distance_to_velocity_interpolator_local = interp1d(distances, velocities, kind='linear', bounds_error=True, fill_value=0.0)
         with self.lock:
             self.path_linestring = path_linestring
-            self.distance_to_velocity_interpolator = interp1d(distances, velocities, kind='linear', bounds_error=True, fill_value=0.0)
+            self.distance_to_velocity_interpolator = distance_to_velocity_interpolator_local
 
     def current_pose_callback(self, msg):
-        if self.path_linestring is None or self.distance_to_velocity_interpolator is None:
+        with self.lock:
+            path_linestring_local = self.path_linestring
+            distance_to_velocity_interpolator_local = self.distance_to_velocity_interpolator
+
+        if path_linestring_local is None or distance_to_velocity_interpolator_local is None:
             vehicle_cmd = VehicleCmd()
             vehicle_cmd.header.stamp = rospy.Time.now()
             vehicle_cmd.header.frame_id = "base_link"
@@ -60,10 +66,6 @@ class PurePursuitFollower:
             vehicle_cmd.ctrl_cmd.linear_velocity = 0.0
             self.vehicle_cmd_pub.publish(vehicle_cmd)
             return
-        
-        with self.lock:
-            path_linestring_local = self.path_linestring
-            distance_to_velocity_interpolator_local = self.distance_to_velocity_interpolator
         
         current_pose = Point([msg.pose.position.x, msg.pose.position.y])
         d_ego_from_path_start = path_linestring_local.project(current_pose)
