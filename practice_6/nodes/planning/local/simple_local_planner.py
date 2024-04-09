@@ -160,7 +160,7 @@ class SimpleLocalPlanner:
             closest_object_distance = object_distances[min_target_velocity_index] - self.current_pose_to_car_front
             closest_object_velocity = object_velocities[min_target_velocity_index]
             
-            stopping_point_distance = object_distances[min_target_velocity_index] + self.current_pose_to_car_front
+            stopping_point_distance = target_distances[min_target_velocity_index] + self.current_pose_to_car_front
         else:
             closest_object_distance = 0.0
             closest_object_velocity = 0.0
