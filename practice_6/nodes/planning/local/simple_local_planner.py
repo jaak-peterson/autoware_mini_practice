@@ -146,7 +146,7 @@ class SimpleLocalPlanner:
                     local_path_blocked = True
 
         if global_path_linestring.coords[-1] == local_path.coords[-1]:
-            object_distances.append(local_path.length)
+            object_distances.append(global_path_distances[-1] - d_ego_from_path_start)
             object_velocities.append(0)
             object_braking_distances.append(self.braking_safety_distance_goal+self.current_pose_to_car_front)
         
