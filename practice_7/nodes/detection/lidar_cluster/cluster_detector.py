@@ -34,11 +34,18 @@ class ClusterDetector:
         data = numpify(msg)
         points = structured_to_unstructured(data[['x', 'y', 'z', 'label']], dtype=np.float32)
         labels = data['label']
-        is_existing_frame = msg.header.frame_id == self.output_frame
-
-        # fetch transform for target frame
         
-        if not is_existing_frame:
+        header = Header()
+        header.stamp = msg.header.stamp
+        header.frame_id = self.output_frame
+        objects_msg = DetectedObjectArray()
+        objects_msg.header = header
+
+        if len(labels) == 0:
+            self.objects_pub.publish(objects_msg)
+            return
+        
+        if msg.header.frame_id != self.output_frame:
             try:
                 transform = self.tf_buffer.lookup_transform(self.output_frame, msg.header.frame_id, msg.header.stamp, rospy.Duration(self.transform_timeout))
             except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
@@ -46,25 +53,11 @@ class ClusterDetector:
                 return
 
         points = points.copy()
-        # turn into homogeneous coordinates
         points[:,3] = 1
-        # transform points to target frame
-        
-        if not is_existing_frame:
+        if msg.header.frame_id != self.output_frame:
             tf_matrix = numpify(transform.transform).astype(np.float32)
             points = points.dot(tf_matrix.T)
 
-        header = Header()
-        header.stamp = msg.header.stamp
-        header.frame_id = self.output_frame
-        
-        if len(labels) == 0:
-            objects_msg = DetectedObjectArray()
-            objects_msg.header = header
-            self.objects_pub.publish(objects_msg)
-            return
-
-        detected_objects = []
         for i in np.unique(labels): 
             # create mask
             mask = (labels == i)
@@ -95,11 +88,8 @@ class ClusterDetector:
             object.velocity_reliable = False
             object.acceleration_reliable = False
             object.header = header
-            detected_objects.append(object)
+            objects_msg.objects.append(object)
         
-        objects_msg = DetectedObjectArray()
-        objects_msg.header = header
-        objects_msg.objects = detected_objects
         self.objects_pub.publish(objects_msg)
 
     def run(self):

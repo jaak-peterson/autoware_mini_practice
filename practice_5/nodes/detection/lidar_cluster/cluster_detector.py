@@ -35,17 +35,6 @@ class ClusterDetector:
         points = structured_to_unstructured(data[['x', 'y', 'z', 'label']], dtype=np.float32)
         labels = data['label']
         
-        try:
-            points = points.copy()
-            points[:,3] = 1
-            if msg.header.frame_id != self.output_frame:
-                transform = self.tf_buffer.lookup_transform(self.output_frame, msg.header.frame_id, msg.header.stamp, rospy.Duration(self.transform_timeout))
-                tf_matrix = numpify(transform.transform).astype(np.float32)
-                points = points.dot(tf_matrix.T)
-        except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
-                rospy.logwarn("%s - %s", rospy.get_name(), e)
-                return
-
         header = Header()
         header.stamp = msg.header.stamp
         header.frame_id = self.output_frame
@@ -55,6 +44,19 @@ class ClusterDetector:
         if len(labels) == 0:
             self.objects_pub.publish(objects_msg)
             return
+        
+        if msg.header.frame_id != self.output_frame:
+            try:
+                transform = self.tf_buffer.lookup_transform(self.output_frame, msg.header.frame_id, msg.header.stamp, rospy.Duration(self.transform_timeout))
+            except (TransformException, rospy.ROSTimeMovedBackwardsException) as e:
+                rospy.logwarn("%s - %s", rospy.get_name(), e)
+                return
+
+        points = points.copy()
+        points[:,3] = 1
+        if msg.header.frame_id != self.output_frame:
+            tf_matrix = numpify(transform.transform).astype(np.float32)
+            points = points.dot(tf_matrix.T)
 
         for i in np.unique(labels): 
             # create mask
