@@ -92,9 +92,8 @@ class SimpleLocalPlanner:
             global_path_distances = self.global_path_distances
             distance_to_velocity_interpolator = self.distance_to_velocity_interpolator
             current_position = self.current_position
-            current_speed = self.current_speed
 
-        if global_path_linestring is None or global_path_distances is None or distance_to_velocity_interpolator is None or current_position is None or current_speed is None:
+        if global_path_linestring is None or global_path_distances is None or distance_to_velocity_interpolator is None or current_position is None:
             self.publish_local_path_wp([], msg.header.stamp, self.output_frame)
             return
 
@@ -112,8 +111,6 @@ class SimpleLocalPlanner:
             return
         
         target_velocity = distance_to_velocity_interpolator(d_ego_from_path_start)
-        local_path_waypoints = self.convert_local_path_to_waypoints(local_path, target_velocity)
-        
         local_path_buffer = local_path.buffer(self.stopping_lateral_distance, cap_style="flat")
         prepare(local_path_buffer)
         
@@ -152,15 +149,15 @@ class SimpleLocalPlanner:
         
         if len(object_distances) > 0:
             target_distances = np.array(object_distances) - np.array(object_braking_distances) - np.abs(object_velocities)*self.braking_reaction_time
-            target_velocities = np.sqrt(np.maximum(np.power(np.array(object_velocities),2) + 2 * self.default_deceleration * target_distances), 0)
+            target_velocities = np.sqrt(np.maximum(np.power(np.array(object_velocities),2) + 2 * self.default_deceleration * target_distances, 0))
             
             min_target_velocity_index = np.argmin(target_velocities)
             target_velocity = min(target_velocities[min_target_velocity_index], target_velocity)
             
-            closest_object_distance = object_distances[min_target_velocity_index] - self.current_pose_to_car_front
+            closest_object_distance = object_distances[min_target_velocity_index]
             closest_object_velocity = object_velocities[min_target_velocity_index]
             
-            stopping_point_distance = target_distances[min_target_velocity_index] + self.current_pose_to_car_front
+            stopping_point_distance = closest_object_distance - self.braking_safety_distance_obstacle
         else:
             closest_object_distance = 0.0
             closest_object_velocity = 0.0

@@ -134,7 +134,6 @@ class SimpleLocalPlanner:
             return
         
         target_velocity = distance_to_velocity_interpolator(d_ego_from_path_start)
-        local_path_waypoints = self.convert_local_path_to_waypoints(local_path, target_velocity)
         
         local_path_buffer = local_path.buffer(self.stopping_lateral_distance, cap_style="flat")
         prepare(local_path_buffer)
@@ -193,10 +192,10 @@ class SimpleLocalPlanner:
             min_target_velocity_index = np.argmin(target_velocities)
             target_velocity = min(target_velocities[min_target_velocity_index], target_velocity)
             
-            closest_object_distance = object_distances[min_target_velocity_index] - self.current_pose_to_car_front
+            closest_object_distance = object_distances[min_target_velocity_index]
             closest_object_velocity = object_velocities[min_target_velocity_index]
             
-            stopping_point_distance = target_distances[min_target_velocity_index] + self.current_pose_to_car_front
+            stopping_point_distance = closest_object_distance - self.braking_safety_distance_obstacle
         else:
             closest_object_distance = 0.0
             closest_object_velocity = 0.0
