@@ -151,8 +151,8 @@ class SimpleLocalPlanner:
             object_braking_distances.append(self.braking_safety_distance_goal+self.current_pose_to_car_front)
         
         if len(object_distances) > 0:
-            target_distances = np.maximum(np.array(object_distances) - np.array(object_braking_distances) - np.abs(object_velocities)*self.braking_reaction_time, 0)
-            target_velocities = np.sqrt(np.power(np.array(object_velocities),2) + 2 * self.default_deceleration * target_distances)
+            target_distances = np.array(object_distances) - np.array(object_braking_distances) - np.abs(object_velocities)*self.braking_reaction_time
+            target_velocities = np.sqrt(np.maximum(np.power(np.array(object_velocities),2) + 2 * self.default_deceleration * target_distances), 0)
             
             min_target_velocity_index = np.argmin(target_velocities)
             target_velocity = min(target_velocities[min_target_velocity_index], target_velocity)
