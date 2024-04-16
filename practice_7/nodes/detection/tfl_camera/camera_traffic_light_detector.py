@@ -142,6 +142,10 @@ class CameraTrafficLightDetector:
             self.camera_model.rectifyImage(image, image)
 
         rois = self.calculate_roi_coordinates(stoplines_on_path, transform)
+        
+        tfl_status = TrafficLightResultArray()
+        tfl_status.header.stamp = camera_image_msg.header.stamp
+        
         if len(rois) > 0:
             roi_images = self.create_roi_images(image, rois)
 
@@ -149,9 +153,6 @@ class CameraTrafficLightDetector:
             predictions = self.model.run(None, {'conv2d_1_input': roi_images})[0]
             classes = np.argmax(predictions, axis=1)
             scores = np.max(predictions, axis=1)
-
-            tfl_status = TrafficLightResultArray()
-            tfl_status.header.stamp = camera_image_msg.header.stamp
 
             # extract results in sync with rois
             for cl, (stoplineId, plId, _, _, _, _) in zip(classes, rois):
@@ -163,11 +164,10 @@ class CameraTrafficLightDetector:
                 tfl_result.recognition_result_str = CLASSIFIER_RESULT_TO_STRING[cl]
 
                 tfl_status.results.append(tfl_result)
-            
-            self.tfl_status_pub.publish(tfl_status)
-            self.publish_roi_images(image, rois, classes, scores, camera_image_msg.header.stamp)
-            return
+
+            self.publish_roi_images(image, rois, classes, scores, camera_image_msg.header.stamp)    
         
+        self.tfl_status_pub.publish(tfl_status)
         self.publish_roi_images(image, [], [], [], camera_image_msg.header.stamp)
 
     def calculate_roi_coordinates(self, stoplines_on_path, transform):
