@@ -3,7 +3,7 @@
 import rospy
 import numpy as np
 
-from shapely import MultiPoint
+from shapely import MultiPoint, Polygon
 from tf2_ros import TransformListener, Buffer, TransformException
 from numpy.lib.recfunctions import structured_to_unstructured
 from ros_numpy import numpify, msgify
@@ -76,6 +76,8 @@ class ClusterDetector:
             # create convex hull
             points_2d = MultiPoint(points[mask,:2])
             hull = points_2d.convex_hull
+            if(hull.geom_type == 'LineString'):
+                hull = Polygon(hull)
             convex_hull_points = [Point32(x, y, centroid_z) for x, y in hull.exterior.coords]
             object.convex_hull.polygon.points = convex_hull_points
 
