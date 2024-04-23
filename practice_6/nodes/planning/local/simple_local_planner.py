@@ -139,16 +139,16 @@ class SimpleLocalPlanner:
                     
                     object_velocities.append(object_velocity)
                     object_distances.append(min_distance)
-                    object_braking_distances.append(self.braking_safety_distance_obstacle+self.current_pose_to_car_front)
+                    object_braking_distances.append(self.braking_safety_distance_obstacle)
                     local_path_blocked = True
 
         if global_path_linestring.coords[-1] == local_path.coords[-1]:
             object_distances.append(global_path_distances[-1] - d_ego_from_path_start)
             object_velocities.append(0)
-            object_braking_distances.append(self.braking_safety_distance_goal+self.current_pose_to_car_front)
+            object_braking_distances.append(self.braking_safety_distance_goal)
         
         if len(object_distances) > 0:
-            target_distances = np.array(object_distances) - np.array(object_braking_distances) - np.abs(object_velocities)*self.braking_reaction_time
+            target_distances = np.array(object_distances) - np.array(object_braking_distances) - self.current_pose_to_car_front - np.abs(object_velocities)*self.braking_reaction_time
             target_velocities = np.sqrt(np.maximum(np.power(np.array(object_velocities),2) + 2 * self.default_deceleration * target_distances, 0))
             
             min_target_velocity_index = np.argmin(target_velocities)
@@ -157,7 +157,7 @@ class SimpleLocalPlanner:
             closest_object_distance = object_distances[min_target_velocity_index]
             closest_object_velocity = object_velocities[min_target_velocity_index]
             
-            stopping_point_distance = closest_object_distance - self.braking_safety_distance_obstacle
+            stopping_point_distance = closest_object_distance - object_braking_distances[min_target_velocity_index]
         else:
             closest_object_distance = 0.0
             closest_object_velocity = 0.0
