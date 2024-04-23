@@ -128,9 +128,6 @@ class CameraTrafficLightDetector:
             stoplines_on_path = self.stoplines_on_path
             transform_from_frame = self.transform_from_frame
         
-        if len(stoplines_on_path) == 0:
-            return
-        
         try:
             transform = self.tf_buffer.lookup_transform(camera_image_msg.header.frame_id, transform_from_frame, camera_image_msg.header.stamp , rospy.Duration(self.transform_timeout))
         except:
@@ -166,9 +163,10 @@ class CameraTrafficLightDetector:
                 tfl_status.results.append(tfl_result)
 
             self.publish_roi_images(image, rois, classes, scores, camera_image_msg.header.stamp)    
+        else:
+            self.publish_roi_images(image, [], [], [], camera_image_msg.header.stamp)
         
         self.tfl_status_pub.publish(tfl_status)
-        self.publish_roi_images(image, [], [], [], camera_image_msg.header.stamp)
 
     def calculate_roi_coordinates(self, stoplines_on_path, transform):
         rois = []
